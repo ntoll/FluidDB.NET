@@ -8,7 +8,7 @@ FluidDB is the product of much effort from the "FluidInfo":http://fluidinfo.com/
 
 Put simply, FluidDB brings the creationist vs evolution argument to the world of databases... ;-)
 
-I've blogged about it a couple of times and include lots of links:
+I've blogged about it a couple of times and these articles include lots of links:
 
 * "http://ntoll.org/article/europython-2009":http://ntoll.org/article/europython-2009
 * "http://ntoll.org/article/fluiddb-101":http://ntoll.org/article/fluiddb-101
