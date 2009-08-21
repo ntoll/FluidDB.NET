@@ -1,0 +1,6 @@
+*.dll
+*.pdb
+*.user
+*.suo
+FluidDB/bin/*
+FluidDB/obj/*
