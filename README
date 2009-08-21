@@ -1,3 +1,18 @@
 The beginnings of an API for interaction with FluidDB for .NET (written in C#).
 
 Not fully tested and definitely a work in progress.
+
+h1. What is FluidDB?
+
+FluidDB is the product of much effort from the "FluidInfo":http://fluidinfo.com/ guys.
+
+Put simply, FluidDB brings the creationist vs evolution argument to the world of databases... ;-)
+
+I've blogged about it a couple of times and include lots of links:
+
+* "http://ntoll.org/article/europython-2009":http://ntoll.org/article/europython-2009
+* "http://ntoll.org/article/fluiddb-101":http://ntoll.org/article/fluiddb-101
+
+These are probably good places to start - especially if you follow the links to the documention in the second post referenced above.
+
+As always, feedback, criticism and patches most welcome..!
