@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C# Express 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidDB", "FluidDB.csproj", "{B9F01CB5-6E4C-440F-B0A8-EC7E151C8735}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "..\UnitTests\UnitTests.csproj", "{8FF3B879-D66A-47AA-985E-C38B8915D3E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluidConsole", "..\FluidConsole\FluidConsole.csproj", "{44F9D1AE-1B42-480C-A5D7-4CA9C8AC38B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +17,14 @@ Global
 		{B9F01CB5-6E4C-440F-B0A8-EC7E151C8735}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9F01CB5-6E4C-440F-B0A8-EC7E151C8735}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9F01CB5-6E4C-440F-B0A8-EC7E151C8735}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FF3B879-D66A-47AA-985E-C38B8915D3E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FF3B879-D66A-47AA-985E-C38B8915D3E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FF3B879-D66A-47AA-985E-C38B8915D3E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FF3B879-D66A-47AA-985E-C38B8915D3E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44F9D1AE-1B42-480C-A5D7-4CA9C8AC38B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44F9D1AE-1B42-480C-A5D7-4CA9C8AC38B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44F9D1AE-1B42-480C-A5D7-4CA9C8AC38B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44F9D1AE-1B42-480C-A5D7-4CA9C8AC38B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

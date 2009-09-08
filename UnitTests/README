@@ -1,0 +1,19 @@
+Unit Test Setup
+===============
+
+In order that the unit tests run correctly you need to supply your username and password credentials.
+
+Rather than hard-code such sensitive data the unit-tests are expecting to find a credentials.json file in your user's temp directory. Something along the lines of:
+
+C:\Users\USERNAME\AppData\Local\Temp\credentials.json
+
+This file should look something like this:
+
+{
+	"username" : "my_username",
+	"password" : "my_password"
+}
+
+Where "my_username" and "my_password" are replaced by the appropriate username and password.
+
+You can always use the credentials.json.example as a template for this file.

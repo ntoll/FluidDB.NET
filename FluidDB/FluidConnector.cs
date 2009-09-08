@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Web;
 using System.IO;
+using System.Web.Script.Serialization;
 using System.Diagnostics;
 
 namespace FluidDB
@@ -15,6 +16,7 @@ namespace FluidDB
     {
         POST,
         GET,
+        HEAD,
         PUT,
         DELETE
     }
@@ -27,7 +29,28 @@ namespace FluidDB
         /// <summary>
         /// The URL for FluidDB
         /// </summary>
-        public const string URL = "http://fluiddb.fluidinfo.com/";
+        public const string FLUIDDB = "http://fluiddb.fluidinfo.com";
+
+        /// <summary>
+        /// The URL for the Sandbox for development testing
+        /// </summary>
+        public const string SANDBOX = "http://sandbox.fluidinfo.com";
+
+        /// <summary>
+        /// Used for parsing json
+        /// </summary>
+        private JavaScriptSerializer jss = new JavaScriptSerializer();
+
+        private string url = FluidConnector.FLUIDDB;
+
+        /// <summary>
+        /// The URL to use for connecting to FluidDB
+        /// </summary>
+        public string URL
+        {
+            get { return this.url; }
+            set { this.url = value; }
+        }
 
         /// <summary>
         /// Use format=json for responses from GET and PUT requests
@@ -72,7 +95,7 @@ namespace FluidDB
         /// <returns>The raw result</returns>
         public HttpWebResponse Call(METHOD m, string path)
         {
-            return this.Call(m, path, string.Empty);
+            return this.Call(m, path, new Dictionary<string, object>());
         }
 
         /// <summary>
@@ -82,9 +105,21 @@ namespace FluidDB
         /// <param name="path">The path to call</param>
         /// <param name="body">The body of the request</param>
         /// <returns>The raw result</returns>
-        public HttpWebResponse Call(METHOD m, string path, string body)
+        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, object> body)
         {
             return this.Call(m, path, body, new Dictionary<string, string>());
+        }
+
+        /// <summary>
+        /// Makes a call to FluidDB
+        /// </summary>
+        /// <param name="m">The type of HTTP method</param>
+        /// <param name="path">The path to call</param>
+        /// <param name="args">Any further arguments to append to the URI</param>
+        /// <returns>The raw result</returns>
+        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, string> args)
+        {
+            return this.Call(m, path, new Dictionary<string, object>(), args);
         }
 
         /// <summary>
@@ -94,14 +129,14 @@ namespace FluidDB
         /// <param name="path">The path to call</param>
         /// <param name="body">The body of the request</param>
         /// <param name="args">Any further arguments to append to the URI</param>
-        /// <returns></returns>
-        public HttpWebResponse Call(METHOD m, string path, string body, Dictionary<string, string> args)
+        /// <returns>The raw result</returns>
+        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, object> body, Dictionary<string, string> args)
         {
             // Process the URI
             StringBuilder URI = new StringBuilder();
-            URI.Append(URL);
+            URI.Append(this.url);
             URI.Append(path);
-            if (this.alwaysUseJson)
+            if (this.alwaysUseJson & (m == METHOD.GET || m == METHOD.PUT))
             {
                 if (!args.ContainsKey("format"))
                 {
@@ -119,7 +154,7 @@ namespace FluidDB
                 URI.Append(string.Join("&", argList.ToArray()));
             }
             // Build the request
-            Uri requestUri = new Uri(URI.ToString(), true);
+            Uri requestUri = new Uri(URI.ToString());
             WebRequest request = WebRequest.Create(requestUri);
             switch (m)
             {
@@ -142,16 +177,18 @@ namespace FluidDB
             ((HttpWebRequest)request).Accept = "application/json";
             if (!(this.password == string.Empty & this.username == string.Empty))
             {
-                request.Credentials = new NetworkCredential(this.username, this.password);
+                string userpass = username+":"+password;
+                byte[] encUserPass = Encoding.UTF8.GetBytes(userpass);
+                string auth="Basic "+Convert.ToBase64String(encUserPass).Trim();
+                ((HttpWebRequest)request).Headers.Add(HttpRequestHeader.Authorization, auth);
             }
-            if (body == string.Empty)
+            if (body.Count == 0)
             {
                 request.ContentType = "text/plain";
             }
             else
             {
-                ASCIIEncoding e = new ASCIIEncoding();
-                Byte[] byteArray = e.GetBytes(body);
+                Byte[] byteArray = Encoding.ASCII.GetBytes(this.jss.Serialize(body));
                 request.ContentType = "application/json";
                 request.ContentLength = byteArray.Length;
                 Stream bodyStream = request.GetRequestStream();
@@ -159,8 +196,17 @@ namespace FluidDB
                 bodyStream.Close();
             }
             // Call FluidDB
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            return response;
+            try
+            {
+                return (HttpWebResponse)request.GetResponse();
+            }
+            catch (WebException e)
+            {
+                // I don't want you to raise an exception dammit... I just want the raw 
+                // response and I'll process the errorClass from the content and maybe 
+                // raise an exception if appropriate elsewhere
+                return (HttpWebResponse)e.Response;
+            }
         }
 
         /// <summary>
@@ -168,8 +214,8 @@ namespace FluidDB
         /// "result" from FluidDB contained therein.
         /// </summary>
         /// <param name="response">The response from FluidDB</param>
-        /// <returns>The "result" from FluidDB</returns>
-        public string GetResult(WebResponse response)
+        /// <returns>The raw string "result" from FluidDB</returns>
+        public string GetRawResult(HttpWebResponse response)
         {
             Stream answer = response.GetResponseStream();
             StreamReader sr = new StreamReader(answer);
@@ -177,41 +223,19 @@ namespace FluidDB
         }
 
         /// <summary>
-        /// In the absence of bolting on nUnit and in order to keep the dependencies to a
-        /// minimum I'm testing the class with the following method. Pass in your username
-        /// and password in order to be able to post
+        /// Given a response with a json payload, will return a dictionary representation
+        /// of the json
         /// </summary>
-        /// <param name="username">Your username</param>
-        /// <param name="password">Your password</param>
-        public void SelfTest(string username, string password)
+        /// <param name="response">The response from FluidDB</param>
+        /// <returns>The </returns>
+        public Dictionary<string, object> GetJsonResultDictionary(HttpWebResponse response)
         {
-            // Return a list of objects that have the tag “username” from the “fluiddb/users” namespace
-            Dictionary<string, string> args = new Dictionary<string, string>();
-            args.Add("query", "has fluiddb/users/username");
-            HttpWebResponse result = this.Call(METHOD.GET, "objects", "", args);
-            Debug.Assert((HttpStatusCode.OK == result.StatusCode), "Didn't return 200");
-            Debug.Assert((this.GetResult(result).Length > 0), "Didn't return anything!");
-
-            // Return an object where the tag “username” from the “fluiddb/users” namespace has the value “ntoll”
-            args["query"] = "fluiddb/users/username = \"ntoll\"";
-            result = this.Call(METHOD.GET, "objects", "", args);
-            Debug.Assert((HttpStatusCode.OK == result.StatusCode), "Didn't return 200");
-            Debug.Assert((this.GetResult(result).Contains("'ids':")), "Didn't return anything valid!");
-
-            // Find out about a specific object
-            result = this.Call(METHOD.GET, "/objects/5873e7cc-2a4a-44f7-a00e-7cebf92a7332", "{'showAbout': True}");
-            Debug.Assert((HttpStatusCode.OK == result.StatusCode), "Didn't return 200");
-
-            // Get the value of the tag “fluiddb/users/username” from the object with the uuid “5873e7cc-2a4a-44f7-a00e-7cebf92a7332”
-            result = this.Call(METHOD.GET, "/objects/5873e7cc-2a4a-44f7-a00e-7cebf92a7332/fluiddb/users/name");
-            Debug.Assert((HttpStatusCode.OK == result.StatusCode), "Didn't return 200");
-            Debug.Assert((this.GetResult(result) == "ntoll"), "Didn't return expected result!");
-
-            // Get the same result as json
-            this.AlwaysUseJson = true;
-            result = this.Call(METHOD.GET, "/objects/5873e7cc-2a4a-44f7-a00e-7cebf92a7332/fluiddb/users/name");
-            Debug.Assert((HttpStatusCode.OK == result.StatusCode), "Didn't return 200");
-            Debug.Assert((this.GetResult(result) == "{'value': 'ntoll'}"), "Didn't return expected result!");
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            if (response.ContentType == "application/json")
+            {
+                result = this.jss.Deserialize<Dictionary<string, object>>(this.GetRawResult(response));
+            }
+            return result;
         }
     }
 }

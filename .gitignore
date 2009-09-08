@@ -2,6 +2,7 @@
 *.pdb
 *.user
 *.suo
-FluidDB/bin/*
-FluidDB/obj/*
+credentials.json
+*/bin/*
+*/obj/*
 *~
