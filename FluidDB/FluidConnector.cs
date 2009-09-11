@@ -156,22 +156,7 @@ namespace FluidDB
             // Build the request
             Uri requestUri = new Uri(URI.ToString());
             WebRequest request = WebRequest.Create(requestUri);
-            switch (m)
-            {
-                case METHOD.POST:
-                    request.Method = "POST";
-                    break;
-                case METHOD.GET:
-                    request.Method = "GET";
-                    break;
-                case METHOD.PUT:
-                    request.Method = "PUT";
-                    break;
-                case METHOD.DELETE:
-                    request.Method = "DELETE";
-                    break;
-            }
-
+            request.Method = m.ToString();
             //  Make sure the headers are correct
             ((HttpWebRequest)request).UserAgent = ".NET FluidDB Client";
             ((HttpWebRequest)request).Accept = "application/json";
