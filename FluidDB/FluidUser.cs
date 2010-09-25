@@ -16,5 +16,6 @@ namespace FluidDB
     /// </summary>
     class FluidUser
     {
+        //GB not implemented any of this stuff yet!
     }
 }

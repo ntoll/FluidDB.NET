@@ -1,0 +1,25 @@
+﻿Guys Thoughts:
+
+FluidDB.Extension serializes stuff without much thought at the moment, definitely needs expansion.
+I am keen to keep .Net primitives stored in FluidDB as json primitives so that the data is nice and interoperable for other apis and services who dont know what
+System.Integer is. This means adding a tag to the property value tag, allowing the runtime type to be stored as well (currently not fully implemented).
+So double pi= 3.141 gets sent to FluidDB as a tag with name "pi" and value of JSON primitive "3.141". 
+The "pi" tag (itself an object in fluiddb) gets tagged with another tag called "DotNetPropertyType" or whatever, whose value is "System.Double".
+Unfortunately this means two lookups to the database. 
+Should be able to get around this to an extent because when reading back from database we KNOW that the property we are reading into is a double,
+so we can just use reflection to find out if it has a parse or deserialize method and invoke that. 
+
+All a work in progress....
+
+
+
+TODO
+Make sure namespaces are passed around in a consistent manner
+Make sure username added to namespaces is consistent
+Consider adding parent namespace to FluidTag rather than only having a namespace/name field
+Look into the best way of serializing and deserializing for FluidDB.Extension classes so that it works with things other than strings
+Implement FluidUser stuff
+Write unit tests for pretty much everything
+Write at least one good demo app
+Write WPF binding extension which allows async data binding directly to fluiddb (badass)
+Add a FluidDBAbout attribute which allows a string property to be used as an object about field, possibly with a specifiable prefix like "book:"

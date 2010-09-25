@@ -48,9 +48,15 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FluidConnector.cs" />
+    <Compile Include="Extension\FluidDBAttributes.cs" />
+    <Compile Include="Extension\FluidDBAttributeUtilities.cs" />
+    <Compile Include="FluidDBGUID.cs" />
     <Compile Include="FluidNamespace.cs" />
     <Compile Include="FluidObject.cs" />
     <Compile Include="FluidTag.cs" />

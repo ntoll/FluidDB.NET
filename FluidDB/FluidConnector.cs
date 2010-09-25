@@ -37,6 +37,11 @@ namespace FluidDB
         public const string SANDBOX = "http://sandbox.fluidinfo.com";
 
         /// <summary>
+        /// The http type string for creating a tag value with primitive data
+        /// </summary>
+        public const string PrimitivePutType = "application/vnd.fluiddb.value+json";
+
+        /// <summary>
         /// Used for parsing json
         /// </summary>
         private JavaScriptSerializer jss = new JavaScriptSerializer();
@@ -87,50 +92,7 @@ namespace FluidDB
             set { this.password = value; }
         }
 
-        /// <summary>
-        /// Makes a call to FluidDB
-        /// </summary>
-        /// <param name="method">The type of HTTP method</param>
-        /// <param name="path">The path to call</param>
-        /// <returns>The raw result</returns>
-        public HttpWebResponse Call(METHOD m, string path)
-        {
-            return this.Call(m, path, new Dictionary<string, object>());
-        }
-
-        /// <summary>
-        /// Makes a call to FluidDB
-        /// </summary>
-        /// <param name="method">The type of HTTP method</param>
-        /// <param name="path">The path to call</param>
-        /// <param name="body">The body of the request</param>
-        /// <returns>The raw result</returns>
-        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, object> body)
-        {
-            return this.Call(m, path, body, new Dictionary<string, string>());
-        }
-
-        /// <summary>
-        /// Makes a call to FluidDB
-        /// </summary>
-        /// <param name="m">The type of HTTP method</param>
-        /// <param name="path">The path to call</param>
-        /// <param name="args">Any further arguments to append to the URI</param>
-        /// <returns>The raw result</returns>
-        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, string> args)
-        {
-            return this.Call(m, path, new Dictionary<string, object>(), args);
-        }
-
-        /// <summary>
-        /// Makes a call to FluidDB
-        /// </summary>
-        /// <param name="method">The type of HTTP method</param>
-        /// <param name="path">The path to call</param>
-        /// <param name="body">The body of the request</param>
-        /// <param name="args">Any further arguments to append to the URI</param>
-        /// <returns>The raw result</returns>
-        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, object> body, Dictionary<string, string> args)
+        private Uri ProcessURI(METHOD m, string path, Dictionary<string, string> args)
         {
             // Process the URI
             StringBuilder URI = new StringBuilder();
@@ -138,12 +100,12 @@ namespace FluidDB
             URI.Append(path);
             if (this.alwaysUseJson & (m == METHOD.GET || m == METHOD.PUT))
             {
-                if (!args.ContainsKey("format"))
+                if (args != null && !args.ContainsKey("format"))
                 {
                     args.Add("format", "json");
                 }
             }
-            if (args.Count > 0)
+            if (args != null && args.Count > 0)
             {
                 URI.Append("?");
                 List<string> argList = new List<string>();
@@ -153,8 +115,70 @@ namespace FluidDB
                 }
                 URI.Append(string.Join("&", argList.ToArray()));
             }
+            return new Uri(URI.ToString());
+        }
+
+        /// <summary>
+        /// Make any call using a custom content type for payload
+        /// </summary>
+        /// <param name="m"></param>
+        /// <param name="path"></param>
+        /// <param name="body"></param>
+        /// <param name="contentType"></param>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, string> args, string contentType, string payload)
+        {
+            Uri requestUri = ProcessURI(m, path, args);
+            WebRequest request = WebRequest.Create(requestUri);
+            request.Method = m.ToString();
+            //  Make sure the headers are correct
+            ((HttpWebRequest)request).UserAgent = ".NET FluidDB Client";
+            ((HttpWebRequest)request).Accept = contentType;
+            if (!(this.password == string.Empty & this.username == string.Empty))
+            {
+                string userpass = username + ":" + password;
+                byte[] encUserPass = Encoding.UTF8.GetBytes(userpass);
+                string auth = "Basic " + Convert.ToBase64String(encUserPass).Trim();
+                ((HttpWebRequest)request).Headers.Add(HttpRequestHeader.Authorization, auth);
+            }
+
+            if (payload != null && payload.Length > 0)
+            {
+                Byte[] byteArray = Encoding.ASCII.GetBytes(payload);
+                request.ContentLength = byteArray.Length;
+                request.ContentType = contentType;
+                Stream bodyStream = request.GetRequestStream();
+                bodyStream.Write(byteArray, 0, byteArray.Length);
+                bodyStream.Close();
+            }
+
+            // Call FluidDB
+            try
+            {
+                return (HttpWebResponse)request.GetResponse();
+            }
+            catch (WebException e)
+            {
+                // I don't want you to raise an exception dammit... I just want the raw 
+                // response and I'll process the errorClass from the content and maybe 
+                // raise an exception if appropriate elsewhere
+                return (HttpWebResponse)e.Response;
+            }
+
+        }
+        /// <summary>
+        /// Makes a call to FluidDB using JSON payload
+        /// </summary>
+        /// <param name="method">The type of HTTP method</param>
+        /// <param name="path">The path to call</param>
+        /// <param name="body">The body of the request</param>
+        /// <param name="args">Any further arguments to append to the URI</param>
+        /// <returns>The raw result</returns>
+        public HttpWebResponse Call(METHOD m, string path, Dictionary<string, string> args, Dictionary<string, object> body)
+        {                        
             // Build the request
-            Uri requestUri = new Uri(URI.ToString());
+            Uri requestUri = ProcessURI(m, path, args);
             WebRequest request = WebRequest.Create(requestUri);
             request.Method = m.ToString();
             //  Make sure the headers are correct
@@ -162,12 +186,13 @@ namespace FluidDB
             ((HttpWebRequest)request).Accept = "application/json";
             if (!(this.password == string.Empty & this.username == string.Empty))
             {
-                string userpass = username+":"+password;
+                string userpass = username + ":" + password;
                 byte[] encUserPass = Encoding.UTF8.GetBytes(userpass);
-                string auth="Basic "+Convert.ToBase64String(encUserPass).Trim();
+                string auth = "Basic " + Convert.ToBase64String(encUserPass).Trim();
                 ((HttpWebRequest)request).Headers.Add(HttpRequestHeader.Authorization, auth);
             }
-            if (body.Count == 0)
+            
+            if (body == null || body.Count == 0)
             {
                 request.ContentType = "text/plain";
             }
